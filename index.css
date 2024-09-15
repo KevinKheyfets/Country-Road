@@ -1,0 +1,32 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Add your background image here */
+  background-image: url('background.png');
+  background-size: cover; /* Makes sure the image covers the entire background */
+  background-position: center; /* Centers the image */
+  background-repeat: no-repeat; /* Prevents image repetition */
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+.leaflet-layer,
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out,
+.leaflet-control-attribution {
+  filter: sepia(1) brightness(85%) contrast(110%);
+}
+#map {
+  width: 700px; /* Set the width of the map */
+  height: 500px; /* Set the height of the map */
+  margin: 20px auto; /* Centers the map horizontally */
+  border: 2px solid #333; /* Optional: Add a border for visibility */
+}
