@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Metadata & Leaflet Map Pin Drop</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.js"></script>
+    <style>
+        #map { height: 500px; width: 100%; }
+        #controls { margin: 10px; }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        input {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Image Metadata Extractor & Leaflet Map</h1>
+    <p>Select an image to extract its GPS coordinates and drop a pin on the map.</p>
+
+    <input type="file" id="imageInput" accept="image/*">
+    <div id="coordinates"></div>
+
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    
+    <script>
+        // Initialize the map and set its view to a default location
+        var map = L.map('map').setView([51.505, -0.09], 13);
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        // Marker group to manage the markers
+        var markerGroup = L.layerGroup().addTo(map);
+
+        // Handle image upload and extract GPS coordinates
+        document.getElementById('imageInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+
+                    img.onload = function() {
+                        EXIF.getData(img, function() {
+                            const lat = EXIF.getTag(this, "GPSLatitude");
+                            const lon = EXIF.getTag(this, "GPSLongitude");
+                            const latRef = EXIF.getTag(this, "GPSLatitudeRef");
+                            const lonRef = EXIF.getTag(this, "GPSLongitudeRef");
+                            const dateTime = EXIF.getTag(this, "DateTime");
+
+                            if (lat && lon) {
+                                const latitude = convertDMSToDD(lat, latRef);
+                                const longitude = convertDMSToDD(lon, lonRef);
+
+                                document.getElementById('coordinates').innerHTML = `Coordinates: Latitude: ${latitude}, Longitude: ${longitude}`;
+
+                                // Use the date the image was taken as the label
+                                const label = dateTime ? `Taken on: ${dateTime}` : 'No date found';
+
+                                // Place the marker on the map
+                                dropPinOnMap(latitude, longitude, label);
+                            } else {
+                                document.getElementById('coordinates').innerHTML = 'No GPS data found in this image.';
+                            }
+                        });
+                    };
+                };
+
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Function to convert DMS to decimal degrees
+        function convertDMSToDD(dms, ref) {
+            const degrees = dms[0];
+            const minutes = dms[1];
+            const seconds = dms[2];
+            let dd = degrees + (minutes / 60) + (seconds / 3600);
+            
+            // If the reference is South or West, make it negative
+            if (ref === "S" || ref === "W") {
+                dd = dd * -1;
+            }
+            return dd;
+        }
+
+        // Function to drop a pin on the map at the provided coordinates
+        function dropPinOnMap(lat, lng, label) {
+            // Clear previous markers
+            markerGroup.clearLayers();
+
+            // Drop a new marker
+            var marker = L.circleMarker([lat, lng], {
+                radius: 8,
+                fillColor: 'blue',
+                color: 'blue',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(markerGroup)
+              .bindPopup(label)  // Add popup with the label (image capture date)
+              .openPopup();      // Show the popup immediately
+
+            // Center the map on the new marker
+            map.setView([lat, lng], 13);
+
+            // Optional: Attach a click listener to remove the marker
+            marker.on('click', function() {
+                if (confirm("Do you want to remove this marker?")) {
+                    map.removeLayer(marker);
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>
